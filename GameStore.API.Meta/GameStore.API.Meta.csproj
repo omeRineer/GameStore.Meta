@@ -14,6 +14,7 @@
   <ItemGroup>
     <ProjectReference Include="..\GameStore.Meta.Business\GameStore.Meta.Business.csproj" />
     <ProjectReference Include="..\GameStore.Meta.Models\GameStore.Meta.Models.csproj" />
+    <ProjectReference Include="..\GameStore.Meta.SignalR\GameStore.Meta.SignalR.csproj" />
   </ItemGroup>
 
   <ItemGroup>

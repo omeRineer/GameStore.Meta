@@ -7,6 +7,8 @@
 	</PropertyGroup>
 
 	<ItemGroup>
+		<PackageReference Include="AutoMapper" Version="13.0.1" />
+		<PackageReference Include="Microsoft.AspNetCore.Authorization" Version="6.0.0" />
 		<PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.1.0" />
 		<PackageReference Include="RabbitMQ.Client" Version="7.1.2" />
 		<PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="6.0.0" />
@@ -15,6 +17,7 @@
 	<ItemGroup>
 		<ProjectReference Include="..\GameStore.Meta.DataAccess\GameStore.Meta.DataAccess.csproj" />
 		<ProjectReference Include="..\GameStore.Meta.Models\GameStore.Meta.Models.csproj" />
+		<ProjectReference Include="..\GameStore.Meta.SignalR\GameStore.Meta.SignalR.csproj" />
 	</ItemGroup>
 
 	<ItemGroup>

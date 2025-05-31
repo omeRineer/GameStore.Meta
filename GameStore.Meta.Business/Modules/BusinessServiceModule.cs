@@ -7,13 +7,16 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace GameStore.Meta.Business
+namespace GameStore.Meta.Business.Modules
 {
     public class BusinessServiceModule : IServiceModule
     {
         public void Load(IServiceCollection services)
         {
             services.AddScoped<NotificationService>();
+            
+            
+
         }
     }
 }

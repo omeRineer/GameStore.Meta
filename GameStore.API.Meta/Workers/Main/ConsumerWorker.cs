@@ -1,6 +1,4 @@
-﻿
-using GameStore.Meta.Models.Notification;
-using RabbitMQ.Client;
+﻿using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;

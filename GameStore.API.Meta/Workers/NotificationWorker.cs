@@ -1,7 +1,6 @@
 ﻿using GameStore.API.Meta.Workers.Main;
-using GameStore.Meta.Business.Hubs;
 using GameStore.Meta.Business.Services;
-using GameStore.Meta.Models.Notification;
+using GameStore.Meta.Models.Message;
 using Microsoft.AspNetCore.SignalR;
 using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
@@ -24,8 +23,8 @@ namespace GameStore.API.Meta.Workers
 
         protected override async Task HandleAsync(object model, BasicDeliverEventArgs args)
         {
-            var notification = GetMessage<CreateNotificationModel>(args);
-            var createResult = await NotificationService.SendAsync(notification);
+            var notification = GetMessage<PushNotificationModel>(args);
+            var createResult = await NotificationService.PushAsync(notification);
         }
     }
 }

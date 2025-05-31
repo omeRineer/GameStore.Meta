@@ -1,8 +1,6 @@
-﻿using GameStore.API.Meta.Base;
-using GameStore.API.Meta.Hubs;
-using GameStore.Meta.Business.Services;
+﻿using GameStore.Meta.Business.Services;
 using GameStore.Meta.Entities.Objects;
-using GameStore.Meta.Models.Notification;
+using GameStore.Meta.Models.Rest.Notification;
 using MeArch.Module.Security.Filters;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -35,7 +33,16 @@ namespace GameStore.API.Meta.Controllers
         [Authorize]
         public async Task<IActionResult> GetNotificationsAsync()
         {
-            var result = await NotificationService.GetNotificationsAsync();
+            var result = await NotificationService.GetListAsync();
+
+            return Ok(result);
+        }
+
+        [HttpGet("{id}")]
+        [Authorize]
+        public async Task<IActionResult> GetDetailAsync([FromRoute] Guid id)
+        {
+            var result = await NotificationService.GetDetailAsync(id);
 
             return Ok(result);
         }

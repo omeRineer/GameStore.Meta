@@ -3,9 +3,10 @@ using Core.Extensions;
 using Core.ServiceModules;
 using GameStore.API.Meta.Extensions;
 using GameStore.API.Meta.Workers;
-using GameStore.Meta.Business;
-using GameStore.Meta.Business.Hubs;
+using GameStore.Meta.Business.Modules;
 using GameStore.Meta.DataAccess;
+using GameStore.Meta.SignalR;
+using GameStore.Meta.SignalR.Hubs;
 using MeArch.Module.Security.Model.Dto;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -15,16 +16,18 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+await builder.Services.AddRabbitMqAsync();
+builder.Services.AddHostedService<NotificationWorker>();
 builder.Services.AddServiceModules(new IServiceModule[]
 {
     new RepositoryServiceModule(),
-    new BusinessServiceModule()
+    new BusinessServiceModule(),
+    new SignalRModule()
 });
 
-await builder.Services.AddRabbitMqAsync();
+
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddSignalR();
-builder.Services.AddHostedService<NotificationWorker>();
+
 builder.Services.AddCors(options =>
                             options.AddDefaultPolicy(builder =>
                             builder.AllowAnyHeader()
@@ -44,6 +47,20 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                                     ValidAudience = MetaConfiguration.TokenOptions.Audience,
                                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(MetaConfiguration.TokenOptions.SecurityKey))
 
+                                };
+
+                                opt.Events = new JwtBearerEvents
+                                {
+                                    OnMessageReceived = (context) =>
+                                    {
+                                        var accessToken = context.Request.Query["access_token"];
+                                        var path = context.Request.Path;
+
+                                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
+                                            context.Token = accessToken;
+
+                                        return Task.CompletedTask;
+                                    }
                                 };
                             });
 builder.Services.AddScoped<CurrentUser>(i =>
