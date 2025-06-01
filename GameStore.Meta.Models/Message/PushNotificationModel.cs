@@ -2,11 +2,14 @@
 {
     public class PushNotificationModel
     {
-        public Guid Sender { get; set; }
         public string Type { get; set; }
-        public string? ContentType { get; set; }
+        public string Sender { get; set; }
+        public string Level { get; set; }
         public string Title { get; set; }
+        public string ContentType { get; set; } = "text";
         public string? Content { get; set; }
-        public List<Guid>? TargetUsers { get; set; }
+        public List<string>? Targets { get; set; }
+
+        public Dictionary<string, object>? Custom { get; set; }
     }
 }

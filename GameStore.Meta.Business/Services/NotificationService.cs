@@ -1,4 +1,5 @@
-﻿using Core.Entities.DTO.Pagination;
+﻿using Configuration;
+using Core.Entities.DTO.Pagination;
 using Core.Utilities.ResultTool;
 using GameStore.Meta.DataAccess.Repositories;
 using GameStore.Meta.Entities.Objects;
@@ -13,6 +14,7 @@ using Microsoft.AspNetCore.SignalR;
 using MongoDB.Driver.Core.Servers;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
@@ -36,12 +38,12 @@ namespace GameStore.Meta.Business.Services
 
         public async Task<IDataResult<GetNotificationDetailModel>> GetDetailAsync(Guid id)
         {
-            var userId = Guid.Parse(CurrentUser.Id.ToString());
+            var userId = CurrentUser.Id.ToString();
             var notification = await NotificationRepository.GetSingleAsync(f => f.Id == id);
 
             if (notification.ReadBy == null)
             {
-                notification.ReadBy = new List<Guid> { userId };
+                notification.ReadBy = new List<string> { userId };
                 await NotificationRepository.UpdateAsync(notification);
             }
             else if (!notification.ReadBy.Contains(userId))
@@ -54,12 +56,14 @@ namespace GameStore.Meta.Business.Services
             {
                 Id = notification.Id,
                 Type = notification.Type,
+                Level = notification.Level,
                 ContentType = notification.ContentType,
                 Sender = notification.Sender,
                 Title = notification.Title,
                 Content = notification.Content,
                 IsRead = notification.ReadBy.Contains(userId),
-                CreateDate = notification.CreateDate
+                CreateDate = notification.CreateDate,
+                Custom = notification.Custom
             };
 
             return new SuccessDataResult<GetNotificationDetailModel>(result);
@@ -67,11 +71,11 @@ namespace GameStore.Meta.Business.Services
 
         public async Task<IDataResult<GetNotificationsModel>> GetListAsync()
         {
-            var userId = Guid.Parse(CurrentUser.Id.ToString());
+            var userId = CurrentUser.Id.ToString();
 
             var notifications = await NotificationRepository.GetListAsync(f => f.Sender == userId ||
-                                                                                        (f.TargetUsers == null ||
-                                                                                         f.TargetUsers.Contains(userId)));
+                                                                                        (f.Targets == null ||
+                                                                                         f.Targets.Contains(userId)));
 
             var result = new GetNotificationsModel
             {
@@ -79,13 +83,15 @@ namespace GameStore.Meta.Business.Services
                 {
                     Id = s.Id,
                     Type = s.Type,
+                    Level = s.Level,
                     ContentType = s.ContentType,
-                    Content = s.ContentType == "TEXT" ? s.Content : null,
+                    Content = s.ContentType == "text" ? s.Content : null,
                     Sender = s.Sender,
                     Title = s.Title,
                     CreateDate = s.CreateDate,
                     IsRead = s.ReadBy != null ? s.ReadBy.Contains(userId)
-                                              : false
+                                              : false,
+                    Custom = s.Custom
                 }).ToList()
             };
 
@@ -94,17 +100,22 @@ namespace GameStore.Meta.Business.Services
 
         public async Task<IResult> SendAsync(CreateNotificationModel req)
         {
+            var checkResult = CheckNotification(req.ContentType, req.Level);
+            if (!checkResult.Success)
+                return checkResult;
+
             var senderId = CurrentUser.Id.ToString();
             var newNotification = new Notification
             {
                 Id = Guid.NewGuid(),
-                Type = req.Type?.ToLower() ?? "info",
-                Sender = Guid.Parse(senderId),
+                Level = req.Level.ToLower(new CultureInfo("en-US")),
+                Sender = senderId,
                 Title = req.Title,
                 Content = req.Content,
-                ContentType = req.ContentType ?? "TEXT",
-                TargetUsers = req.TargetUsers,
-                CreateDate = DateTime.Now
+                ContentType = req.ContentType.ToLower(new CultureInfo("en-US")),
+                Targets = req.TargetUsers,
+                CreateDate = DateTime.Now,
+                Custom = req.Custom
             };
             await NotificationRepository.AddAsync(newNotification);
 
@@ -115,16 +126,22 @@ namespace GameStore.Meta.Business.Services
 
         public async Task<IResult> PushAsync(PushNotificationModel req)
         {
+            var checkResult = CheckNotification(req.ContentType, req.Level);
+            if (!checkResult.Success)
+                return checkResult;
+
             var newNotification = new Notification
             {
                 Id = Guid.NewGuid(),
-                Type = req.Type?.ToLower() ?? "info",
+                Level = req.Level.ToLower(new CultureInfo("en-US")),
+                Type = req.Type,
                 Sender = req.Sender,
                 Title = req.Title,
                 Content = req.Content,
-                ContentType = req.ContentType ?? "TEXT",
-                TargetUsers = req.TargetUsers,
-                CreateDate = DateTime.Now
+                ContentType = req.ContentType.ToLower(new CultureInfo("en-US")),
+                Targets = req.Targets,
+                CreateDate = DateTime.Now,
+                Custom = req.Custom
             };
             await NotificationRepository.AddAsync(newNotification);
 
@@ -136,7 +153,7 @@ namespace GameStore.Meta.Business.Services
         private async Task PushToClientsAsync(Notification notification)
         {
             var connections = HubConnectionManager.GetConnections();
-            var targets = notification.TargetUsers?.Select(s => s.ToString()).ToList();
+            var targets = notification.Targets?.Select(s => s.ToString()).ToList();
             if (targets != null)
                 connections = connections.Where(f => targets.Contains(f.Key) || f.Key == notification.Sender.ToString());
 
@@ -149,15 +166,31 @@ namespace GameStore.Meta.Business.Services
                 await Hub.Clients.Client(connection).SendAsync("ReceiveNotification", new ReceiveNotificationModel
                 {
                     Id = notification.Id,
+                    Level = notification.Level,
                     Type = notification.Type,
                     ContentType = notification.ContentType,
                     Content = notification.Content,
                     Title = notification.Title,
                     Sender = notification.Sender,
                     IsRead = false,
-                    CreateDate = notification.CreateDate
+                    CreateDate = notification.CreateDate,
+                    Custom = notification.Custom
                 });
             }
+        }
+
+        private IResult CheckNotification(string contentType, string level)
+        {
+            if (string.IsNullOrEmpty(contentType) || string.IsNullOrEmpty(level))
+                return new ErrorResult($"contentType or level cannot null");
+
+            if (!MetaConfiguration.NotificationOptions.ContentTypes.Contains(contentType.ToLower(new CultureInfo("en-US"))))
+                return new ErrorResult($"{contentType} is not supported");
+
+            if (!MetaConfiguration.NotificationOptions.Levels.Contains(level.ToLower(new CultureInfo("en-US"))))
+                return new ErrorResult($"{level} is not supported");
+
+            return new SuccessResult();
         }
     }
 }
