@@ -7,13 +7,15 @@ using GameStore.Meta.Business.Modules;
 using GameStore.Meta.DataAccess;
 using GameStore.Meta.SignalR;
 using GameStore.Meta.SignalR.Hubs;
-using MeArch.Module.Security.Model.Dto;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using RabbitMQ.Client;
 using System.Security.Claims;
 using Newtonsoft.Json;
 using System.Text;
+using GameStore.Meta.Models.Client;
+using Microsoft.AspNetCore.Authentication;
+using GameStore.API.Meta.Auth.Notification;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -34,36 +36,10 @@ builder.Services.AddCors(options =>
                             builder.AllowAnyHeader()
                                    .AllowAnyMethod()
                                    .AllowAnyOrigin()));
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                            .AddJwtBearer(opt =>
-                            {
-                                opt.TokenValidationParameters = new TokenValidationParameters
-                                {
-                                    ValidateIssuer = true,
-                                    ValidateAudience = true,
-                                    ValidateLifetime = true,
-                                    ValidateIssuerSigningKey = true,
 
-                                    ValidIssuer = MetaConfiguration.TokenOptions.Issuer,
-                                    ValidAudience = MetaConfiguration.TokenOptions.Audience,
-                                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(MetaConfiguration.TokenOptions.SecurityKey))
+builder.Services.AddAuthentication()
+    .AddScheme<NotificationApiKeyAuthenticationOptions, NotificationApiKeyAuthenticationHandler>("NotificationApiKeyScheme", null);
 
-                                };
-
-                                opt.Events = new JwtBearerEvents
-                                {
-                                    OnMessageReceived = (context) =>
-                                    {
-                                        var accessToken = context.Request.Query["access_token"];
-                                        var path = context.Request.Path;
-
-                                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs"))
-                                            context.Token = accessToken;
-
-                                        return Task.CompletedTask;
-                                    }
-                                };
-                            });
 builder.Services.AddScoped<CurrentUser>(i =>
 {
     var httpContextAccessor = i.GetService<IHttpContextAccessor>();
@@ -72,13 +48,9 @@ builder.Services.AddScoped<CurrentUser>(i =>
     if (user != null && user.Identity.IsAuthenticated)
         return new CurrentUser
         {
-            Id = Guid.Parse(user.Claims.FirstOrDefault(f => f.Type == ClaimTypes.NameIdentifier)?.Value),
-            Name = user.Claims.FirstOrDefault(f => f.Type == ClaimTypes.Name)?.Value,
-            Phone = user.Claims.FirstOrDefault(f => f.Type == ClaimTypes.MobilePhone)?.Value,
-            Email = user.Claims.FirstOrDefault(f => f.Type == ClaimTypes.Email)?.Value,
-            Roles = user.Claims.Where(f => f.Type == ClaimTypes.Role)?.Select(s => s.Value).ToArray(),
-            Permissions = user.Claims.Where(f => f.Type == "Permission")?.Select(s => s.Value).ToArray(),
-            IsAuthenticated = user.Identity.IsAuthenticated
+            ApiKey = user.Claims.FirstOrDefault(f => f.Type == "ApiKey")?.Value,
+            Key = user.Claims.FirstOrDefault(f => f.Type == ClaimTypes.NameIdentifier)?.Value,
+            Client = Guid.Parse(user.Claims.FirstOrDefault(f => f.Type == "Client")?.Value),
         };
 
     return new CurrentUser();

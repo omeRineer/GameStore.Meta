@@ -23,9 +23,6 @@
     <Reference Include="Core">
       <HintPath>..\..\Core\GameMarketPlace\Core\bin\Debug\net6.0\Core.dll</HintPath>
     </Reference>
-    <Reference Include="MeArch.Module.Security">
-      <HintPath>..\..\Core\GameMarketPlace\MeArch.Module.Security\bin\Debug\net6.0\MeArch.Module.Security.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
 </Project>

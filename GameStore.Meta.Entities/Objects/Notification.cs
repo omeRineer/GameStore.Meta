@@ -11,8 +11,11 @@ namespace GameStore.Meta.Entities.Objects
 {
     public class Notification : MongoBaseEntity<Guid>
     {
+        [BsonRepresentation(BsonType.String)]
+        public Guid Client { get; set; }
+
         public string Type { get; set; }
-        public string Level { get; set; }
+        public string Level { get; set; }        
         public string Sender { get; set; }
         public string Title { get; set; }
         public string ContentType { get; set; }

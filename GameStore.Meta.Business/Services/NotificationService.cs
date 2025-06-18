@@ -3,13 +3,12 @@ using Core.Entities.DTO.Pagination;
 using Core.Utilities.ResultTool;
 using GameStore.Meta.DataAccess.Repositories;
 using GameStore.Meta.Entities.Objects;
+using GameStore.Meta.Models.Client;
 using GameStore.Meta.Models.Message;
 using GameStore.Meta.Models.Rest.Notification;
 using GameStore.Meta.Models.SignalR;
 using GameStore.Meta.SignalR.Hubs;
 using GameStore.Meta.SignalR.Utilities;
-using MeArch.Module.Security.Entities.Master;
-using MeArch.Module.Security.Model.Dto;
 using Microsoft.AspNetCore.SignalR;
 using MongoDB.Driver.Core.Servers;
 using System;
@@ -28,27 +27,27 @@ namespace GameStore.Meta.Business.Services
         readonly NotificationRepository NotificationRepository;
         readonly CurrentUser CurrentUser;
         readonly IHubContext<NotificationHub> Hub;
-        public NotificationService(NotificationRepository notifications, CurrentUser currentUser, IHubContext<NotificationHub> hub, HubConnectionManager<NotificationHub> hubConnectionManager)
+        public NotificationService(NotificationRepository notifications, IHubContext<NotificationHub> hub, HubConnectionManager<NotificationHub> hubConnectionManager, CurrentUser currentUser)
         {
             NotificationRepository = notifications;
-            CurrentUser = currentUser;
             Hub = hub;
+            CurrentUser = currentUser;
             HubConnectionManager = hubConnectionManager;
+            CurrentUser = currentUser;
         }
 
         public async Task<IDataResult<GetNotificationDetailModel>> GetDetailAsync(Guid id)
         {
-            var userId = CurrentUser.Id.ToString();
             var notification = await NotificationRepository.GetSingleAsync(f => f.Id == id);
 
             if (notification.ReadBy == null)
             {
-                notification.ReadBy = new List<string> { userId };
+                notification.ReadBy = new List<string> { CurrentUser.Key };
                 await NotificationRepository.UpdateAsync(notification);
             }
-            else if (!notification.ReadBy.Contains(userId))
+            else if (!notification.ReadBy.Contains(CurrentUser.Key))
             {
-                notification.ReadBy.Add(userId);
+                notification.ReadBy.Add(CurrentUser.Key);
                 await NotificationRepository.UpdateAsync(notification);
             }
 
@@ -61,7 +60,7 @@ namespace GameStore.Meta.Business.Services
                 Sender = notification.Sender,
                 Title = notification.Title,
                 Content = notification.Content,
-                IsRead = notification.ReadBy.Contains(userId),
+                IsRead = notification.ReadBy.Contains(CurrentUser.Key),
                 CreateDate = notification.CreateDate,
                 Custom = notification.Custom
             };
@@ -71,11 +70,9 @@ namespace GameStore.Meta.Business.Services
 
         public async Task<IDataResult<GetNotificationsModel>> GetListAsync()
         {
-            var userId = CurrentUser.Id.ToString();
-
-            var notifications = await NotificationRepository.GetListAsync(f => f.Sender == userId ||
-                                                                                        (f.Targets == null ||
-                                                                                         f.Targets.Contains(userId)));
+            var notifications = await NotificationRepository.GetListAsync(f => (f.Client == CurrentUser.Client) &&
+                                                                               (f.Sender == CurrentUser.Key ||
+                                                                               (f.Targets == null || f.Targets.Contains(CurrentUser.Key))));
 
             var result = new GetNotificationsModel
             {
@@ -89,39 +86,13 @@ namespace GameStore.Meta.Business.Services
                     Sender = s.Sender,
                     Title = s.Title,
                     CreateDate = s.CreateDate,
-                    IsRead = s.ReadBy != null ? s.ReadBy.Contains(userId)
+                    IsRead = s.ReadBy != null ? s.ReadBy.Contains(CurrentUser.Key)
                                               : false,
                     Custom = s.Custom
                 }).ToList()
             };
 
             return new SuccessDataResult<GetNotificationsModel>(result);
-        }
-
-        public async Task<IResult> SendAsync(CreateNotificationModel req)
-        {
-            var checkResult = CheckNotification(req.ContentType, req.Level);
-            if (!checkResult.Success)
-                return checkResult;
-
-            var senderId = CurrentUser.Id.ToString();
-            var newNotification = new Notification
-            {
-                Id = Guid.NewGuid(),
-                Level = req.Level.ToLower(new CultureInfo("en-US")),
-                Sender = senderId,
-                Title = req.Title,
-                Content = req.Content,
-                ContentType = req.ContentType.ToLower(new CultureInfo("en-US")),
-                Targets = req.TargetUsers,
-                CreateDate = DateTime.Now,
-                Custom = req.Custom
-            };
-            await NotificationRepository.AddAsync(newNotification);
-
-            await PushToClientsAsync(newNotification);
-
-            return new SuccessResult();
         }
 
         public async Task<IResult> PushAsync(PushNotificationModel req)
@@ -133,9 +104,10 @@ namespace GameStore.Meta.Business.Services
             var newNotification = new Notification
             {
                 Id = Guid.NewGuid(),
+                Client = CurrentUser.Client,
                 Level = req.Level.ToLower(new CultureInfo("en-US")),
                 Type = req.Type,
-                Sender = req.Sender,
+                Sender = req.Sender ?? CurrentUser.Key,
                 Title = req.Title,
                 Content = req.Content,
                 ContentType = req.ContentType.ToLower(new CultureInfo("en-US")),
@@ -153,9 +125,8 @@ namespace GameStore.Meta.Business.Services
         private async Task PushToClientsAsync(Notification notification)
         {
             var connections = HubConnectionManager.GetConnections();
-            var targets = notification.Targets?.Select(s => s.ToString()).ToList();
-            if (targets != null)
-                connections = connections.Where(f => targets.Contains(f.Key) || f.Key == notification.Sender.ToString());
+            if (notification.Targets != null)
+                connections = connections.Where(f => notification.Targets.Contains(f.Key) || f.Key == notification.Sender);
 
             var connectionIdList = connections.SelectMany(s => s.Value)
                                               .Select(s => s)

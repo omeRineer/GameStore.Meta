@@ -1,8 +1,10 @@
 ﻿using GameStore.Meta.SignalR.Utilities;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.SignalR;
 
 namespace GameStore.Meta.SignalR.Hubs
 {
+    [Authorize(AuthenticationSchemes = "NotificationApiKeyScheme")]
     public class NotificationHub : Hub
     {
         readonly HubConnectionManager<NotificationHub> HubConnectionManager;

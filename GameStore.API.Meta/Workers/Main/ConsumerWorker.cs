@@ -1,4 +1,7 @@
-﻿using RabbitMQ.Client;
+﻿using GameStore.Meta.Business.Services;
+using GameStore.Meta.Entities.Objects;
+using GameStore.Meta.Models.Message;
+using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
 using System.Text;
 using System.Text.Json;
@@ -8,15 +11,19 @@ namespace GameStore.API.Meta.Workers.Main
 {
     public abstract class ConsumerWorker : BackgroundService
     {
-        private string Tag { get; init; }
-        private string Queue { get; init; }
+        protected string Tag { get; private init; }
+        protected string Queue { get; private init; }
+        protected bool AutoAck { get; private init; }
 
+        protected readonly IConnection Connection;
         protected readonly IChannel Channel;
-        public ConsumerWorker(IChannel channel, string queue, string tag)
+        public ConsumerWorker(IChannel channel, IConnection connection, string queue, string tag, bool autoAck = true)
         {
             Channel = channel;
             Tag = tag;
             Queue = queue;
+            AutoAck = autoAck;
+            Connection = connection;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -32,7 +39,7 @@ namespace GameStore.API.Meta.Workers.Main
             consumer.ReceivedAsync += HandleAsync;
 
             await Channel.BasicConsumeAsync(queue: Queue,
-                         autoAck: false,
+                         autoAck: AutoAck,
                          consumer: consumer,
                          consumerTag: Tag,
                          exclusive: false,

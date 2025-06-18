@@ -1,7 +1,8 @@
 ﻿using GameStore.Meta.Business.Services;
 using GameStore.Meta.Entities.Objects;
+using GameStore.Meta.Models.Message;
 using GameStore.Meta.Models.Rest.Notification;
-using MeArch.Module.Security.Filters;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -12,6 +13,7 @@ using System.Threading.Channels;
 
 namespace GameStore.API.Meta.Controllers
 {
+    [Authorize(AuthenticationSchemes = "NotificationApiKeyScheme")]
     public class NotificationsController : BaseController
     {
         readonly NotificationService NotificationService;
@@ -21,16 +23,14 @@ namespace GameStore.API.Meta.Controllers
         }
 
         [HttpPost("Send")]
-        [Authorize("SuperAdmin,API.Meta.Notifications.Send")]
-        public async Task<IActionResult> SendAsync([FromBody] CreateNotificationModel request)
+        public async Task<IActionResult> SendAsync([FromBody] PushNotificationModel request)
         {
-            var result = await NotificationService.SendAsync(request);
+            var result = await NotificationService.PushAsync(request);
 
             return Ok(result);
         }
 
         [HttpGet]
-        [Authorize]
         public async Task<IActionResult> GetNotificationsAsync()
         {
             var result = await NotificationService.GetListAsync();
@@ -39,7 +39,6 @@ namespace GameStore.API.Meta.Controllers
         }
 
         [HttpGet("{id}")]
-        [Authorize]
         public async Task<IActionResult> GetDetailAsync([FromRoute] Guid id)
         {
             var result = await NotificationService.GetDetailAsync(id);

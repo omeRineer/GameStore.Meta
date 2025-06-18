@@ -1,5 +1,6 @@
 ﻿using GameStore.API.Meta.Workers.Main;
 using GameStore.Meta.Business.Services;
+using GameStore.Meta.Entities.Objects;
 using GameStore.Meta.Models.Message;
 using Microsoft.AspNetCore.SignalR;
 using RabbitMQ.Client;
@@ -14,9 +15,10 @@ namespace GameStore.API.Meta.Workers
     {
         readonly NotificationService NotificationService;
 
-        public NotificationWorker(IChannel channel, NotificationService notificationService) : base(channel, 
-                                                                                                    "Notification_Queue",
-                                                                                                    "Notification_Worker")
+        public NotificationWorker(IChannel channel, IConnection connection, NotificationService notificationService) : base(channel, connection,
+                                                                                                                            "Notification_Queue",
+                                                                                                                            "Notification_Worker",
+                                                                                                                            false)
         {
             NotificationService = notificationService;
         }
@@ -24,6 +26,7 @@ namespace GameStore.API.Meta.Workers
         protected override async Task HandleAsync(object model, BasicDeliverEventArgs args)
         {
             var notification = GetMessage<PushNotificationModel>(args);
+
             var createResult = await NotificationService.PushAsync(notification);
         }
     }
