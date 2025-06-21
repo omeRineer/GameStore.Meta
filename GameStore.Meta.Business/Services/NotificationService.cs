@@ -10,14 +10,7 @@ using GameStore.Meta.Models.SignalR;
 using GameStore.Meta.SignalR.Hubs;
 using GameStore.Meta.SignalR.Utilities;
 using Microsoft.AspNetCore.SignalR;
-using MongoDB.Driver.Core.Servers;
-using System;
-using System.Collections.Generic;
 using System.Globalization;
-using System.Linq;
-using System.Linq.Expressions;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace GameStore.Meta.Business.Services
 {
@@ -25,15 +18,17 @@ namespace GameStore.Meta.Business.Services
     {
         readonly HubConnectionManager<NotificationHub> HubConnectionManager;
         readonly NotificationRepository NotificationRepository;
+        readonly NotificationSubscriberRepository NotificationSubscriberRepository;
         readonly CurrentUser CurrentUser;
         readonly IHubContext<NotificationHub> Hub;
-        public NotificationService(NotificationRepository notifications, IHubContext<NotificationHub> hub, HubConnectionManager<NotificationHub> hubConnectionManager, CurrentUser currentUser)
+        public NotificationService(NotificationRepository notifications, IHubContext<NotificationHub> hub, HubConnectionManager<NotificationHub> hubConnectionManager, CurrentUser currentUser, NotificationSubscriberRepository notificationSubscriberRepository)
         {
             NotificationRepository = notifications;
             Hub = hub;
             CurrentUser = currentUser;
             HubConnectionManager = hubConnectionManager;
             CurrentUser = currentUser;
+            NotificationSubscriberRepository = notificationSubscriberRepository;
         }
 
         public async Task<IDataResult<GetNotificationDetailModel>> GetDetailAsync(Guid id)
