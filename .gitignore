@@ -360,3 +360,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+/GameStore.Meta.Configuration/appsettings.Development.json
+/GameStore.Meta.Configuration/appsettings.Local.json
+/GameStore.Meta.Configuration/appsettings.Production.json
