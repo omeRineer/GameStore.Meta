@@ -16,6 +16,7 @@ using System.Text;
 using GameStore.Meta.Models.Client;
 using Microsoft.AspNetCore.Authentication;
 using GameStore.API.Meta.Auth.Notification;
+using Core.Utilities.ServiceTools;
 
 var builder = WebApplication.CreateBuilder(args);
 

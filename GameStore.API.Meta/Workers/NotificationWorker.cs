@@ -1,4 +1,5 @@
-﻿using GameStore.API.Meta.Workers.Main;
+﻿using Core.Utilities.ServiceTools;
+using GameStore.API.Meta.Workers.Main;
 using GameStore.Meta.Business.Services;
 using GameStore.Meta.Entities.Objects;
 using GameStore.Meta.Models.Message;
@@ -13,21 +14,21 @@ namespace GameStore.API.Meta.Workers
 {
     public class NotificationWorker : ConsumerWorker
     {
-        readonly NotificationService NotificationService;
+        private readonly IServiceScopeFactory _scopeFactory;
 
-        public NotificationWorker(IChannel channel, IConnection connection, NotificationService notificationService) : base(channel, connection,
-                                                                                                                            "Notification_Queue",
-                                                                                                                            "Notification_Worker",
-                                                                                                                            false)
+        public NotificationWorker(IChannel channel, IConnection connection, IServiceScopeFactory scopeFactory)
+            : base(channel, connection, "Notification_Queue", "Notification_Worker", false)
         {
-            NotificationService = notificationService;
+            _scopeFactory = scopeFactory;
         }
 
         protected override async Task HandleAsync(object model, BasicDeliverEventArgs args)
         {
-            var notification = GetMessage<PushNotificationModel>(args);
+            using var scope = _scopeFactory.CreateScope();
+            var notificationService = scope.ServiceProvider.GetRequiredService<NotificationService>();
 
-            var createResult = await NotificationService.PushAsync(notification);
+            var notification = GetMessage<PushNotificationModel>(args);
+            await notificationService.PushAsync(notification);
         }
     }
 }

@@ -1,0 +1,29 @@
+FROM mcr.microsoft.com/dotnet/aspnet:6.0 as base
+EXPOSE 2016
+EXPOSE 2017
+ENV ASPNETCORE_ENVIRONMENT=Development
+ENV ASPNETCORE_URLS="http://*:2016"
+
+FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
+WORKDIR /src
+ARG BUILD_CONFIGURATION=Release
+COPY ["GameStore.API.Meta/GameStore.API.Meta.csproj", "GameStore.API.Meta/"]
+COPY ["GameStore.Meta.Business/GameStore.Meta.Business.csproj", "GameStore.Meta.Business/"]
+COPY ["GameStore.Meta.DataAccess/GameStore.Meta.DataAccess.csproj", "GameStore.Meta.DataAccess/"]
+COPY ["GameStore.Meta.Configuration/GameStore.Meta.Configuration.csproj", "GameStore.Meta.Configuration/"]
+COPY ["GameStore.Meta.Entities/GameStore.Meta.Entities.csproj", "GameStore.Meta.Entities/"]
+COPY ["GameStore.Meta.Models/GameStore.Meta.Models.csproj", "GameStore.Meta.Models/"]
+COPY ["GameStore.Meta.SignalR/GameStore.Meta.SignalR.csproj", "GameStore.Meta.SignalR/"]
+RUN dotnet restore "./GameStore.API.Meta/GameStore.API.Meta.csproj"
+COPY . .
+RUN dotnet build "./GameStore.API.Meta/GameStore.API.Meta.csproj" -c $BUILD_CONFIGURATION -o /app/build
+
+FROM build AS publish
+ARG BUILD_CONFIGURATION=Release
+RUN dotnet publish "./GameStore.API.Meta/GameStore.API.Meta.csproj" -c $BUILD_CONFIGURATION -o /app/publish /p:UseAppHost=false
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+ENTRYPOINT [ "dotnet", "GameStore.API.Meta.dll" ]
+

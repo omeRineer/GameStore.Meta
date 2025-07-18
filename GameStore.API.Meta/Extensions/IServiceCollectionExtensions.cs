@@ -15,7 +15,15 @@ namespace GameStore.API.Meta.Extensions
             connectionFactory.UserName = MetaConfiguration.RabbitMqOptions.UserName;
             connectionFactory.Password = MetaConfiguration.RabbitMqOptions.Password;
 
-            var connection = await connectionFactory.CreateConnectionAsync();
+            IConnection? connection = null;
+            for (int i = 0; i < 20; i++)
+            {
+                await Task.Delay(1000);
+                connection = await connectionFactory.CreateConnectionAsync();
+
+                if (connection != null && connection.IsOpen)
+                    break;
+            }
             var channel = await connection.CreateChannelAsync();
 
             services.AddSingleton<IConnection>(connection);
