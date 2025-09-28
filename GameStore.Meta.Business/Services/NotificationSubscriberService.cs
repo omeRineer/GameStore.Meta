@@ -18,15 +18,15 @@ namespace GameStore.Meta.Business.Services
             ClientRepository = clientRepository;
         }
 
-        public async Task<IResult> CreateSubscriberAsync(CreateNotificationSubscriberModel model)
+        public async Task<IDataResult<CreateNotificationSubscriberResponseModel>> CreateSubscriberAsync(CreateNotificationSubscriberModel model)
         {
             var client = await ClientRepository.GetSingleOrDefaultAsync(f => f.Id == model.Client);
             if (client == null)
-                return new ErrorResult("Client mevcut değil.");
+                return new ErrorDataResult<CreateNotificationSubscriberResponseModel>("Client is not avaible.");
 
             var avaibleSubscriber = await NotificationSubscriberRepository.GetSingleOrDefaultAsync(f => f.Key == model.Key && f.Client == model.Client);
             if (avaibleSubscriber != null)
-                return new ErrorResult("Abone mevcut. Farklı bir anahtar girin.");
+                return new ErrorDataResult<CreateNotificationSubscriberResponseModel>("Subscriber is avaible. Please, set a different key");
 
             string apiKey = CryptoHelper.Encrypt(model.Key, client.Signature);
             var subscriber = new NotificationSubscriber
@@ -39,7 +39,14 @@ namespace GameStore.Meta.Business.Services
 
             await NotificationSubscriberRepository.AddAsync(subscriber);
 
-            return new SuccessResult("Abone oluşturuldu.");
+            var result = new CreateNotificationSubscriberResponseModel
+            {
+                ApiKey = apiKey,
+                ExpireDate = model.ExpireDate,
+                Client = client.Name
+            };
+
+            return new SuccessDataResult<CreateNotificationSubscriberResponseModel>(result, "Subscriber is created.");
         }
 
         public async Task<IDataResult<NotificationSubscriber?>> GetSubscriberAsync(string apiKey)
