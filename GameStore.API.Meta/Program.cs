@@ -44,7 +44,7 @@ builder.Services.AddAuthentication()
 builder.Services.AddScoped<CurrentUser>(i =>
 {
     var httpContextAccessor = i.GetService<IHttpContextAccessor>();
-    var user = httpContextAccessor.HttpContext?.User;
+    var user = httpContextAccessor?.HttpContext?.User;
 
     if (user != null && user.Identity.IsAuthenticated)
         return new CurrentUser
@@ -60,12 +60,8 @@ builder.Services.AddScoped<CurrentUser>(i =>
 builder.Services.AddControllers()
                 .AddNewtonsoftJson();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
-
-app.UseSwagger();
-app.UseSwaggerUI();
 
 app.UseCors();
 

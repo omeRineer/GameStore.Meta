@@ -16,13 +16,13 @@ namespace GameStore.Meta.SignalR.Hubs
 
         public override async Task OnConnectedAsync()
         {
-            HubConnectionManager.AddConnection(Context.UserIdentifier, Context.ConnectionId);
+            HubConnectionManager.AddConnection(Context);
             await base.OnConnectedAsync();
         }
 
         public override async Task OnDisconnectedAsync(Exception exception)
         {
-            HubConnectionManager.RemoveConnection(Context.UserIdentifier, Context.ConnectionId);
+            HubConnectionManager.RemoveConnection(Context);
             await base.OnDisconnectedAsync(exception);
         }
     }

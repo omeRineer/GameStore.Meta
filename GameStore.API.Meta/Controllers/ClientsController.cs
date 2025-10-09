@@ -1,5 +1,5 @@
 ﻿using GameStore.Meta.Business.Services;
-using GameStore.Meta.Models.Rest.Client;
+using GameStore.Meta.Models.Rest;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -20,15 +20,15 @@ namespace GameStore.API.Meta.Controllers
         {
             var result = await ClientService.GetDetailAsync(id);
 
-            return Ok(result);
+            return Response(result);
         }
 
         [HttpPost("Create")]
-        public async Task<IActionResult> CreateAsync([FromBody] CreateClientModel model)
+        public async Task<IActionResult> CreateAsync([FromBody] CreateClientRequest model)
         {
             var result = await ClientService.CreateClientAsync(model);
 
-            return Ok(result);
+            return Response(result);
         }
     }
 }

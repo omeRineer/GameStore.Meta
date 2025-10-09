@@ -9,6 +9,7 @@
         public string ContentType { get; set; } = "text";
         public string? Content { get; set; }
         public List<string>? Targets { get; set; }
+        public List<string>? Topics { get; set; }
 
         public Dictionary<string, object>? Custom { get; set; }
     }

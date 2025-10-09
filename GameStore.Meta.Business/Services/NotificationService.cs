@@ -18,10 +18,10 @@ namespace GameStore.Meta.Business.Services
     {
         readonly HubConnectionManager<NotificationHub> HubConnectionManager;
         readonly NotificationRepository NotificationRepository;
-        readonly NotificationSubscriberRepository NotificationSubscriberRepository;
+        readonly SubscriberRepository NotificationSubscriberRepository;
         readonly CurrentUser CurrentUser;
         readonly IHubContext<NotificationHub> Hub;
-        public NotificationService(NotificationRepository notifications, IHubContext<NotificationHub> hub, HubConnectionManager<NotificationHub> hubConnectionManager, CurrentUser currentUser, NotificationSubscriberRepository notificationSubscriberRepository)
+        public NotificationService(NotificationRepository notifications, IHubContext<NotificationHub> hub, HubConnectionManager<NotificationHub> hubConnectionManager, CurrentUser currentUser, SubscriberRepository notificationSubscriberRepository)
         {
             NotificationRepository = notifications;
             Hub = hub;
@@ -95,7 +95,7 @@ namespace GameStore.Meta.Business.Services
             var checkResult = CheckNotification(req.ContentType, req.Level);
             if (!checkResult.Success)
                 return checkResult;
-
+            
             var newNotification = new Notification
             {
                 Id = Guid.NewGuid(),
@@ -107,6 +107,7 @@ namespace GameStore.Meta.Business.Services
                 Content = req.Content,
                 ContentType = req.ContentType.ToLower(new CultureInfo("en-US")),
                 Targets = req.Targets,
+                Topics = req.Topics,
                 CreateDate = DateTime.Now,
                 Custom = req.Custom
             };
@@ -119,17 +120,11 @@ namespace GameStore.Meta.Business.Services
 
         private async Task PushToClientsAsync(Notification notification)
         {
-            var connections = HubConnectionManager.GetConnections();
-            if (notification.Targets != null)
-                connections = connections.Where(f => notification.Targets.Contains(f.Key) || f.Key == notification.Sender);
+            var connections = HubConnectionManager.GetTargets(notification.Targets, notification.Topics);
 
-            var connectionIdList = connections.SelectMany(s => s.Value)
-                                              .Select(s => s)
-                                              .ToList();
-
-            foreach (var connection in connectionIdList)
+            foreach (var connection in connections)
             {
-                await Hub.Clients.Client(connection).SendAsync("ReceiveNotification", new ReceiveNotificationModel
+                await Hub.Clients.Client(connection.Value.ConnectionId).SendAsync("ReceiveNotification", new ReceiveNotificationModel
                 {
                     Id = notification.Id,
                     Level = notification.Level,

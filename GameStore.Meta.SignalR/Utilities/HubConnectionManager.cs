@@ -1,4 +1,6 @@
-﻿using System;
+﻿using GameStore.Meta.SignalR.Model;
+using Microsoft.AspNetCore.SignalR;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -8,43 +10,56 @@ namespace GameStore.Meta.SignalR.Utilities
 {
     public class HubConnectionManager<THub>
     {
-        Dictionary<string, List<string>> Connections { get; }
+        Dictionary<string, ConnectionUser> Connections { get; }
         public HubConnectionManager()
         {
             Connections = new();
         }
 
-        public void AddConnection(string key, string connectionId)
+        public void AddConnection(HubCallerContext context)
         {
             lock (Connections)
             {
-                if (!Connections.ContainsKey(key))
-                    Connections[key] = new List<string>();
-
-                Connections[key].Add(connectionId);
+                if (!Connections.ContainsKey(context.UserIdentifier))
+                    Connections[context.UserIdentifier] = new ConnectionUser
+                    {
+                        ConnectionId = context.ConnectionId,
+                        Id = context.UserIdentifier,
+                        Topics = context.User.Claims.Where(f => f.Type == "Topic")
+                                                    .Select(s => s.Value)
+                                                    .ToList()
+                    };
             }
         }
 
-        public void RemoveConnection(string key, string connectionId)
+        public void RemoveConnection(HubCallerContext context)
         {
             lock (Connections)
             {
-                if (Connections.ContainsKey(key))
-                {
-                    Connections[key].Remove(connectionId);
-
-                    if (Connections[key].Count == 0)
-                        Connections.Remove(key);
-                }
+                if (Connections.ContainsKey(context.UserIdentifier))
+                    Connections.Remove(context.UserIdentifier);
             }
         }
 
-        public IEnumerable<KeyValuePair<string, List<string>>> GetConnections()
+        public IEnumerable<KeyValuePair<string, ConnectionUser>> GetTargets(List<string>? users = null,
+                                                                            List<string>? topics = null)
         {
             lock (Connections)
             {
-                return Connections.AsEnumerable();
+                List<KeyValuePair<string, ConnectionUser>> targetUsers = new();
+                if (users != null)
+                    targetUsers = Connections.Where(f => users.Contains(f.Key) && f.Value.Topics == null).ToList();
+
+                List<KeyValuePair<string, ConnectionUser>> targetTopics = new();
+                if (topics != null)
+                    targetTopics = Connections.Where(f => f.Value.Topics != null && topics.Any(x => f.Value.Topics.Contains(x))).ToList();
+
+                var resultTargets = targetUsers.Concat(targetTopics)
+                                               .AsEnumerable();
+
+                return resultTargets;
             }
+            
         }
     }
 }

@@ -21,7 +21,6 @@ namespace Configuration
 
         public static MongoDbOptions MongoDbOptions { get => Configuration.GetSection("MongoDbOptions").Get<MongoDbOptions>(); }
         public static RabbitMqOptions RabbitMqOptions { get => Configuration.GetSection("RabbitMqOptions").Get<RabbitMqOptions>(); }
-        public static TokenOptions TokenOptions { get => Configuration.GetSection("TokenOptions").Get<TokenOptions>(); }
         public static NotificationOptions NotificationOptions { get => Configuration.GetSection("NotificationOptions").Get<NotificationOptions>(); }
 
     }

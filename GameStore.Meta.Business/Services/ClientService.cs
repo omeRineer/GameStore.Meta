@@ -1,7 +1,7 @@
 ﻿using Core.Utilities.ResultTool;
 using GameStore.Meta.DataAccess.Repositories;
 using GameStore.Meta.Entities.Objects;
-using GameStore.Meta.Models.Rest.Client;
+using GameStore.Meta.Models.Rest;
 
 namespace GameStore.Meta.Business.Services
 {
@@ -14,11 +14,11 @@ namespace GameStore.Meta.Business.Services
             ClientRepository = clientRepository;
         }
 
-        public async Task<IResult> CreateClientAsync(CreateClientModel model)
+        public async Task<IDataResult<CreateClientResponse>> CreateClientAsync(CreateClientRequest model)
         {
             var isAvaible = await ClientRepository.GetSingleOrDefaultAsync(f => f.Signature == model.Signature);
             if (isAvaible != null)
-                return new ErrorResult("İstemci mevcut. Farklı bir Signature girin.");
+                return new ErrorDataResult<CreateClientResponse>("Client is avaible. Please, set a difference signature value.");
 
             var client = new Client
             {
@@ -29,26 +29,21 @@ namespace GameStore.Meta.Business.Services
 
             await ClientRepository.AddAsync(client);
 
-            return new SuccessResult("İstemci oluşturuldu.");
+            var result = new CreateClientResponse(client.Signature, client.Name, client.ExpireDate, client.CreateDate);
+
+            return new SuccessDataResult<CreateClientResponse>(result);
         }
 
-        public async Task<IDataResult<GetClientDetailModel>> GetDetailAsync(Guid id)
+        public async Task<IDataResult<GetClientDetailResponse>> GetDetailAsync(Guid id)
         {
             var client = await ClientRepository.GetSingleOrDefaultAsync(f => f.Id == id);
 
             if (client == null)
-                return new ErrorDataResult<GetClientDetailModel>("İstemci bulunamadı");
+                return new ErrorDataResult<GetClientDetailResponse>("Client is not found.");
 
-            var result = new GetClientDetailModel
-            {
-                Id = client.Id,
-                Name = client.Name,
-                ExpireDate = client.ExpireDate,
-                CreateDate = client.CreateDate,
-                Signature = client.Signature
-            };
+            var result = new GetClientDetailResponse(client.Id, client.Signature, client.Name, client.ExpireDate, client.CreateDate);
 
-            return new SuccessDataResult<GetClientDetailModel>(result);
+            return new SuccessDataResult<GetClientDetailResponse>(result);
         }
     }
 }

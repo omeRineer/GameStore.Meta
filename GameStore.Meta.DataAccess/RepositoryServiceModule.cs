@@ -17,7 +17,8 @@ namespace GameStore.Meta.DataAccess
         {
             services.AddScoped<NotificationRepository>();
             services.AddScoped<ClientRepository>();
-            services.AddScoped<NotificationSubscriberRepository>();
+            services.AddScoped<SubscriberRepository>();
+            services.AddScoped<ChannelRepository>();
 
             services.AddSingleton<IMongoClient>(opt => new MongoClient(MetaConfiguration.MongoDbOptions.ConnectionString));
             services.AddScoped(opt =>

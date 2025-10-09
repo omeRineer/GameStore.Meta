@@ -9,8 +9,8 @@ namespace GameStore.API.Meta.Auth.Notification
     public class NotificationApiKeyAuthenticationHandler : AuthenticationHandler<NotificationApiKeyAuthenticationOptions>
     {
         const string ApiKeyHeaderName = "Notification-Api-Key";
-        readonly NotificationSubscriberService NotificationSubscriberService;
-        public NotificationApiKeyAuthenticationHandler(IOptionsMonitor<NotificationApiKeyAuthenticationOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock, NotificationSubscriberService notificationSubscriberService) : base(options, logger, encoder, clock)
+        readonly SubscriberService NotificationSubscriberService;
+        public NotificationApiKeyAuthenticationHandler(IOptionsMonitor<NotificationApiKeyAuthenticationOptions> options, ILoggerFactory logger, UrlEncoder encoder, ISystemClock clock, SubscriberService notificationSubscriberService) : base(options, logger, encoder, clock)
         {
             NotificationSubscriberService = notificationSubscriberService;
         }
@@ -22,7 +22,7 @@ namespace GameStore.API.Meta.Auth.Notification
                 return AuthenticateResult.Fail("API Key not provided.");
 
             var providedApiKey = headers.FirstOrDefault() ?? queries.FirstOrDefault();
-            var subscriber = (await NotificationSubscriberService.GetSubscriberAsync(providedApiKey)).Data;
+            var subscriber = (await NotificationSubscriberService.GetSubscriberByApiKey(providedApiKey)).Data;
 
             if (subscriber == null)
                 return AuthenticateResult.Fail("Invalid API Key.");
@@ -30,12 +30,16 @@ namespace GameStore.API.Meta.Auth.Notification
             if (subscriber.ExpireDate != null && subscriber.ExpireDate < DateTime.Now)
                 return AuthenticateResult.Fail("API Key is expired.");
 
-            var claims = new[]
-                {
-                    new Claim(ClaimTypes.NameIdentifier, subscriber.Key),
-                    new Claim("ApiKey", subscriber.ApiKey),
-                    new Claim("Client", subscriber.Client.ToString())
-                };
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, subscriber.Key),
+                new Claim("ApiKey", subscriber.ApiKey),
+                new Claim("Client", subscriber.Client.ToString())
+            };
+
+            if (subscriber.Topics != null && subscriber.Topics.Count > 0)
+                foreach (var topic in subscriber.Topics)
+                    claims.Add(new Claim("Topic", topic));
 
             var identity = new ClaimsIdentity(claims, Scheme.Name);
             var principal = new ClaimsPrincipal(identity);

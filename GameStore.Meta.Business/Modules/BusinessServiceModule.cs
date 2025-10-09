@@ -15,7 +15,8 @@ namespace GameStore.Meta.Business.Modules
         {
             services.AddScoped<NotificationService>();
             services.AddScoped<ClientService>();
-            services.AddScoped<NotificationSubscriberService>();
+            services.AddScoped<SubscriberService>();
+            services.AddScoped<ChannelService>();
             
         }
     }

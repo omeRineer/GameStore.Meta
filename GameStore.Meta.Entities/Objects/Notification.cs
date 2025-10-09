@@ -21,7 +21,9 @@ namespace GameStore.Meta.Entities.Objects
         public string ContentType { get; set; }
         public string? Content { get; set; }
         public List<string>? ReadBy { get; set; }
+
         public List<string>? Targets { get; set; }
+        public List<string>? Topics { get; set; }
 
         public Dictionary<string, object>? Custom { get; set; }
 
