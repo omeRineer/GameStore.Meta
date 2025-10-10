@@ -1,6 +1,8 @@
 ﻿using Core.DataAccess.Mongo;
+using Core.Entities.Abstract;
 using GameStore.Meta.Entities.Objects;
 using MongoDB.Driver;
+using System.Linq.Expressions;
 
 namespace GameStore.Meta.DataAccess.Repositories
 {
@@ -9,5 +11,6 @@ namespace GameStore.Meta.DataAccess.Repositories
         public ClientRepository(IMongoDatabase dataBase) : base(dataBase, "Clients")
         {
         }
+
     }
 }

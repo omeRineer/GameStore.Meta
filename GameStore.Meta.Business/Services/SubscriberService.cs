@@ -1,8 +1,10 @@
-﻿using Core.Utilities.ResultTool;
+﻿using AutoMapper;
+using Core.Utilities.ResultTool;
 using GameStore.Meta.Business.Helpers;
 using GameStore.Meta.DataAccess.Repositories;
 using GameStore.Meta.Entities.Objects;
 using GameStore.Meta.Models.Rest;
+using GameStore.Meta.Models.Rest.Subscriber;
 
 namespace GameStore.Meta.Business.Services
 {
@@ -10,14 +12,16 @@ namespace GameStore.Meta.Business.Services
     {
         readonly SubscriberRepository SubscriberRepository;
         readonly ClientRepository ClientRepository;
+        readonly IMapper Mapper;
 
-        public SubscriberService(SubscriberRepository subscriberRepository, ClientRepository clientRepository)
+        public SubscriberService(SubscriberRepository subscriberRepository, ClientRepository clientRepository, IMapper mapper)
         {
             SubscriberRepository = subscriberRepository;
             ClientRepository = clientRepository;
+            Mapper = mapper;
         }
 
-        public async Task<IDataResult<CreateSubscriberResponse>> CreateSubscriberAsync(CreateSubscriberRequest model)
+        public async Task<IDataResult<CreateSubscriberResponse>> CreateAsync(CreateSubscriberRequest model)
         {
             var client = await ClientRepository.GetSingleOrDefaultAsync(f => f.Id == model.Client);
             if (client == null)
@@ -38,50 +42,48 @@ namespace GameStore.Meta.Business.Services
 
             await SubscriberRepository.AddAsync(subscriber);
 
-            var result = new CreateSubscriberResponse(client.Id, subscriber.ApiKey, subscriber.ExpireDate);
+            var result = Mapper.Map<CreateSubscriberResponse>(subscriber);
 
             return new SuccessDataResult<CreateSubscriberResponse>(result, "Subscriber is created.");
         }
 
-        public async Task<IDataResult<GetSubscriberResponse>> GetDetailAsync(Guid id)
+        public async Task<IDataResult<UpdateSubscriberResponse>> UpdateAsync(UpdateSubscriberRequest model)
+        {
+            var subscriber = await SubscriberRepository.GetSingleOrDefaultAsync(f => f.Id == model.Id);
+            if (subscriber == null)
+                return new ErrorDataResult<UpdateSubscriberResponse>("Subscriber is not found.");
+
+            subscriber = Mapper.Map(model, subscriber);
+
+            await SubscriberRepository.UpdateAsync(subscriber);
+
+            var result = Mapper.Map<UpdateSubscriberResponse>(subscriber);
+
+            return new SuccessDataResult<UpdateSubscriberResponse>(result, "Subscriber is updated.");
+        }
+
+        public async Task<IDataResult<GetSubscriberDetailResponse>> GetDetailAsync(Guid id)
         {
             var subscriber = await SubscriberRepository.GetSingleOrDefaultAsync(f=> f.Id == id);
 
             if (subscriber == null)
-                return new ErrorDataResult<GetSubscriberResponse>("Subscriber is not avaible.");
+                return new ErrorDataResult<GetSubscriberDetailResponse>("Subscriber is not avaible.");
 
-            var result = new GetSubscriberResponse
-                (
-                    subscriber.Id,
-                    subscriber.Client,
-                    subscriber.Key,
-                    subscriber.ApiKey,
-                    subscriber.Topics,
-                    subscriber.ExpireDate,
-                    subscriber.CreateDate
-                );
+            var result = Mapper.Map<GetSubscriberDetailResponse>(subscriber);
 
-            return new SuccessDataResult<GetSubscriberResponse>(result);
+            return new SuccessDataResult<GetSubscriberDetailResponse>(result);
         }
 
-        public async Task<IDataResult<SubscriberItem?>> GetSubscriberByApiKey(string apiKey)
+        public async Task<IDataResult<GetSubscriberDetailResponse?>> GetDetailAsync(string apiKey)
         {
             var subscriber = await SubscriberRepository.GetSingleOrDefaultAsync(f => f.ApiKey == apiKey);
 
             if(subscriber == null)
-                return new ErrorDataResult<SubscriberItem?>();
+                return new ErrorDataResult<GetSubscriberDetailResponse?>("Subscriber is not avaible.");
 
-            var result = new SubscriberItem
-                (
-                    subscriber.Id,
-                    subscriber.Client,
-                    subscriber.Key,
-                    subscriber.ApiKey,
-                    subscriber.Topics,
-                    subscriber.ExpireDate
-                );
+            var result = Mapper.Map<GetSubscriberDetailResponse>(subscriber);
 
-            return new SuccessDataResult<SubscriberItem?>(result);
+            return new SuccessDataResult<GetSubscriberDetailResponse?>(result);
         }
     }
 }

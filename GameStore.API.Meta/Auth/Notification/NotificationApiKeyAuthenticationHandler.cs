@@ -19,10 +19,10 @@ namespace GameStore.API.Meta.Auth.Notification
         {
             if (!Request.Headers.TryGetValue(ApiKeyHeaderName, out var headers) &
                 !Request.Query.TryGetValue(ApiKeyHeaderName, out var queries))
-                return AuthenticateResult.Fail("API Key not provided.");
+                return AuthenticateResult.Fail("API Key is not provided.");
 
             var providedApiKey = headers.FirstOrDefault() ?? queries.FirstOrDefault();
-            var subscriber = (await NotificationSubscriberService.GetSubscriberByApiKey(providedApiKey)).Data;
+            var subscriber = (await NotificationSubscriberService.GetDetailAsync(providedApiKey)).Data;
 
             if (subscriber == null)
                 return AuthenticateResult.Fail("Invalid API Key.");
