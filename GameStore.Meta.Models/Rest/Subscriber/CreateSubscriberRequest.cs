@@ -9,6 +9,8 @@ namespace GameStore.Meta.Models.Rest.Subscriber
     public class CreateSubscriberRequest
     {
         public Guid Client { get; set; }
+        public string Name { get; set; }
+        public string Email { get; set; }
         public string Key { get; set; }
         public List<string>? Topics { get; set; }
         public DateTime? ExpireDate { get; set; }

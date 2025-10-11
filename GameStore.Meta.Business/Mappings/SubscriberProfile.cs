@@ -12,6 +12,7 @@ namespace GameStore.Meta.Business.Mappings
             CreateMap<Subscriber, SubscriberResponse>();
             CreateMap<Subscriber, CreateSubscriberResponse>().IncludeBase<Subscriber, SubscriberResponse>();
             CreateMap<Subscriber, UpdateSubscriberResponse>().IncludeBase<Subscriber, SubscriberResponse>();
+            CreateMap<Subscriber, GetSubscriberDetailResponse>().IncludeBase<Subscriber, SubscriberResponse>();
 
             CreateMap<CreateSubscriberRequest, Subscriber>();
             CreateMap<UpdateSubscriberRequest, Subscriber>();

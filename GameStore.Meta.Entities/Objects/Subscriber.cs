@@ -13,6 +13,8 @@ namespace GameStore.Meta.Entities.Objects
     {
         [BsonRepresentation(BsonType.String)]
         public Guid Client { get; set; }
+        public string Name { get; set; }
+        public string Email { get; set; }
         public string Key { get; set; }
         public string ApiKey { get; set; }
         public List<string>? Topics { get; set; }

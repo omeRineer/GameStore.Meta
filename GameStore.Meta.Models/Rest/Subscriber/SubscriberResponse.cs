@@ -10,6 +10,8 @@ namespace GameStore.Meta.Models.Rest.Subscriber
     {
         public Guid Id { get; set; }
         public Guid Client { get; set; }
+        public string Name { get; set; }
+        public string Email { get; set; }
         public string Key { get; set; }
         public string ApiKey { get; set; }
         public List<string>? Topics { get; set; }

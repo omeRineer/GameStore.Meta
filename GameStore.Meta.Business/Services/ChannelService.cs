@@ -30,11 +30,7 @@ namespace GameStore.Meta.Business.Services
             if (isAvaible != null)
                 return new ErrorDataResult<CreateChannelResponse>("Channel is avaible. Please, set a difference name value.");
 
-            var channel = new Channel
-            {
-                Name = model.Name,
-                Topics = model.Topics,
-            };
+            var channel = Mapper.Map<Channel>(model);
 
             await channelRepository.AddAsync(channel);
 
@@ -45,7 +41,7 @@ namespace GameStore.Meta.Business.Services
 
         public async Task<IDataResult<UpdateChannelResponse>> UpdateAsync(UpdateChannelRequest model)
         {
-            var channel = await channelRepository.GetSingleOrDefaultAsync(f => f.Name == model.Name);
+            var channel = await channelRepository.GetSingleOrDefaultAsync(f => f.Id == model.Id);
             if (channel == null)
                 return new ErrorDataResult<UpdateChannelResponse>("Channel is not found.");
 
