@@ -7,6 +7,7 @@ using GameStore.Meta.Models.Rest.Channel;
 using GameStore.Meta.Models.Rest.Client;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -26,11 +27,12 @@ namespace GameStore.Meta.Business.Services
 
         public async Task<IDataResult<CreateChannelResponse>> CreateAsync(CreateChannelRequest model)
         {
-            var isAvaible = await channelRepository.GetSingleOrDefaultAsync(f => f.Name == model.Name);
+            var isAvaible = await channelRepository.GetSingleOrDefaultAsync(f => f.Prefix == model.Prefix);
             if (isAvaible != null)
                 return new ErrorDataResult<CreateChannelResponse>("Channel is avaible. Please, set a difference name value.");
 
             var channel = Mapper.Map<Channel>(model);
+            channel.Topics = channel.Topics?.Select(s=> $"{model.Prefix}{s}").ToList();
 
             await channelRepository.AddAsync(channel);
 
@@ -46,6 +48,7 @@ namespace GameStore.Meta.Business.Services
                 return new ErrorDataResult<UpdateChannelResponse>("Channel is not found.");
 
             channel = Mapper.Map(model, channel);
+            channel.Topics = channel.Topics?.Select(s => $"{channel.Prefix}{s}").ToList();
 
             await channelRepository.UpdateAsync(channel);
 

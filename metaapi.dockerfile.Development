@@ -1,8 +1,5 @@
 FROM mcr.microsoft.com/dotnet/aspnet:6.0 as base
 EXPOSE 2016
-EXPOSE 2017
-ENV ASPNETCORE_ENVIRONMENT=Development
-ENV ASPNETCORE_URLS="http://*:2016"
 
 FROM mcr.microsoft.com/dotnet/sdk:6.0 AS build
 WORKDIR /src

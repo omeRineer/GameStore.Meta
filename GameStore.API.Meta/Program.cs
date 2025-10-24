@@ -20,8 +20,8 @@ using Core.Utilities.ServiceTools;
 
 var builder = WebApplication.CreateBuilder(args);
 
-//await builder.Services.AddRabbitMqAsync();
-//builder.Services.AddHostedService<NotificationWorker>();
+await builder.Services.AddRabbitMqAsync();
+builder.Services.AddHostedService<NotificationWorker>();
 builder.Services.AddServiceModules(new IServiceModule[]
 {
     new RepositoryServiceModule(),
