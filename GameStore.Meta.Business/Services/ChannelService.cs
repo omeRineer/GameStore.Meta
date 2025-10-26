@@ -32,7 +32,7 @@ namespace GameStore.Meta.Business.Services
                 return new ErrorDataResult<CreateChannelResponse>("Channel is avaible. Please, set a difference name value.");
 
             var channel = Mapper.Map<Channel>(model);
-            channel.Topics = channel.Topics?.Select(s=> $"{model.Prefix}{s}").ToList();
+            channel.Topics = channel.Topics?.Select(s=> $"{model.Prefix}_{s}").ToList();
 
             await channelRepository.AddAsync(channel);
 
